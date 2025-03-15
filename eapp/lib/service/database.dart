@@ -11,13 +11,17 @@ class DatabaseMethods {
       required String uid,
       required String name,
       required String email,
+      required String phone,
       String role = "Client",
+      String? imageURL = null,
    }) async {
       await _firestore.collection("users").doc(uid).set({
          "uid": uid,
          "name": name,
          "email": email,
+         "phone":phone,
          "role": role,
+         "imageURL":imageURL,
          "createdAt": FieldValue.serverTimestamp(),
       });
    }
@@ -46,6 +50,8 @@ class DatabaseMethods {
                name: userDoc["name"],
                email: userDoc["email"],
                role: userDoc["role"],
+               imageURL: userDoc["imageURL"],
+                phone: userDoc["phone"]
             );
 
             return userDoc["role"]; // إرجاع دور المستخدم
@@ -53,8 +59,39 @@ class DatabaseMethods {
             return null; // المستخدم غير موجود
          }
       } on FirebaseAuthException catch (e) {
-         print("خطأ أثناء تسجيل الدخول: ${e.message}");
+
          return null; // خطأ أثناء تسجيل الدخول
+      }
+   }
+
+   Future<void> updateUser({
+      required String uid,
+      String? name,
+      String? phone,
+      String? imageURL,
+   }) async {
+      try {
+         Map<String, dynamic> updatedData = {};
+         if (name != null) updatedData["name"] = name;
+         if (phone != null) updatedData["phone"] = phone;
+         if (imageURL != null) updatedData["imageURL"] = imageURL;
+
+         if (updatedData.isNotEmpty) {
+            await _firestore.collection("users").doc(uid).update(updatedData);
+
+            // تحديث البيانات المخزنة في SharedPreferences
+            Map<String, String?> userData = await UserPreferences.getUser();
+            await UserPreferences.saveUser(
+               uid: uid,
+               name: name ?? userData["name"] ?? "",
+               email: userData["email"] ?? "",
+               phone: phone ?? userData["phone"] ?? "",
+               imageURL: imageURL ?? userData["imageURL"],
+               role: userData["role"] ?? "Client",
+            );
+         }
+      } catch (e) {
+         print("❌ فشل تحديث البيانات: $e");
       }
    }
 

@@ -13,17 +13,20 @@ class Signup extends StatefulWidget {
   State<Signup> createState() => _SignupState();
 }
 class _SignupState extends State<Signup> {
-  String email = "", password = "", name = "";
+  String email = "", password = "", name = "", phone = "";
   TextEditingController nameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController mailController = TextEditingController();
+  TextEditingController phoneController = TextEditingController();
+
   final _formKey = GlobalKey<FormState>();
-//
+
   Future<void> registration() async {
     setState(() {
       email = mailController.text.trim();
       name = nameController.text.trim();
       password = passwordController.text.trim();
+      phone = phoneController.text.trim();  // الحصول على رقم الهاتف
     });
 
     if (_formKey.currentState!.validate()) {
@@ -31,20 +34,15 @@ class _SignupState extends State<Signup> {
         UserCredential userCredential = await FirebaseAuth.instance
             .createUserWithEmailAndPassword(email: email, password: password);
 
-        // إضافة بيانات المستخدم إلى Firestore
+        // إضافة بيانات المستخدم إلى Firestore مع رقم الهاتف
         await DatabaseMethods().addUser(
           uid: userCredential.user!.uid,
           name: name,
           email: email,
+          phone: phone,
         );
 
-        // حفظ بيانات المستخدم محليًا
-        await UserPreferences.saveUser(
-          uid: userCredential.user!.uid,
-          name: name,
-          email: email,
-          role: "Seller", // افتراضيًا
-        );
+
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -80,7 +78,6 @@ class _SignupState extends State<Signup> {
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -179,8 +176,22 @@ class _SignupState extends State<Signup> {
                                 prefixIcon: Icon(Icons.password_outlined),
                               ),
                             ),
+                            SizedBox(height: 30.0),
+                            TextFormField(
+                              controller: phoneController,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter Phone Number';
+                                }
+                                return null;
+                              },
+                              decoration: InputDecoration(
+                                hintText: 'Phone Number',
+                                hintStyle: AppWidget.semiBooldTexeFeildStyle(),
+                                prefixIcon: Icon(Icons.phone_outlined),
+                              ),
+                            ),
                             SizedBox(height: 40.0),
-                            //عند الضغط على تسحيل ترسل البيانات الئ فايربيز
                             GestureDetector(
                               onTap: registration,
                               child: Material(
@@ -230,6 +241,7 @@ class _SignupState extends State<Signup> {
     );
   }
 }
+
 
 class BottomNav {
 }
