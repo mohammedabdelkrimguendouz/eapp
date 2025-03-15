@@ -7,14 +7,14 @@ import 'package:eapp/pages/favorites.dart';
 import 'package:eapp/pages/cart.dart';
 import 'package:eapp/admin/home_admin.dart';
 
-class Bottomnav extends StatefulWidget {
-  const Bottomnav({super.key});
+class BottomnavAdmin extends StatefulWidget {
+  const BottomnavAdmin({super.key});
 
   @override
-  State<Bottomnav> createState() => _BottomnavState();
+  State<BottomnavAdmin> createState() => _BottomnavAdminState();
 }
 
-class _BottomnavState extends State<Bottomnav> {
+class _BottomnavAdminState extends State<BottomnavAdmin> {
   int currentTabIndex = 0;
   late List<Widget> pages;
   late HomeAdmin homepages;
