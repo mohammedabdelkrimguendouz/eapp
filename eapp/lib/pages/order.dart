@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:eapp/service/user_preferences.dart';
-
+import 'package:eapp/service/database.dart';
 class OrderPage extends StatefulWidget {
   final String name;
   final String imageUrl;
@@ -16,7 +15,6 @@ class OrderPage extends StatefulWidget {
 }
 
 class _OrderPageState extends State<OrderPage> {
-  String selectedPaymentMethod = "الدفع عند الاستلام";
   bool isLoading = false;
 
   void confirmOrder() async {
@@ -24,21 +22,16 @@ class _OrderPageState extends State<OrderPage> {
     try {
       Map<String, String?> userData = await UserPreferences.getUser();
       String? userId = userData['uid'];
-      if (  userId == null) throw "المستخدم غير مسجل الدخول";
+      if (userId == null) throw "المستخدم غير مسجل الدخول";
 
-      DocumentReference orderRef = FirebaseFirestore.instance.collection('orders').doc();
-
-      await orderRef.set({
-        'userId': userId,
-        'name': widget.name,
-        'imageUrl': widget.imageUrl,
-        'price': widget.price,
-        'quantity': widget.quantity,
-        'totalPrice': widget.price * widget.quantity,
-        'paymentMethod': selectedPaymentMethod,
-        'status': 'قيد المعالجة',
-        'timestamp': Timestamp.now(),
-      });
+      DatabaseMethods databaseMethods = DatabaseMethods();
+      await databaseMethods.addOrder(
+        userId: userId,
+        name: widget.name,
+        imageUrl: widget.imageUrl,
+        price: widget.price,
+        quantity: widget.quantity,
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("✅ تم تأكيد الطلب بنجاح!")),
@@ -53,45 +46,51 @@ class _OrderPageState extends State<OrderPage> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("تأكيد الطلب")),
+      appBar: AppBar(
+        title: const Text("تأكيد الطلب"),
+        backgroundColor: Colors.pinkAccent,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.network(widget.imageUrl, height: 200, fit: BoxFit.cover),
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(15),
+                      child: Image.network(widget.imageUrl, height: 200, width: double.infinity, fit: BoxFit.cover),
+                    ),
+                    const SizedBox(height: 15),
+                    Text(widget.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    const Divider(thickness: 1.2),
+                    ListTile(
+                      leading: const Icon(Icons.attach_money, color: Colors.green),
+                      title: Text("السعر: ${widget.price} DZ", style: const TextStyle(fontSize: 18)),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.shopping_cart, color: Colors.blue),
+                      title: Text("الكمية: ${widget.quantity}", style: const TextStyle(fontSize: 18)),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.calculate, color: Colors.red),
+                      title: Text(
+                        "الإجمالي: ${widget.price * widget.quantity} DZ",
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.redAccent),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Text(widget.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            Text("السعر: ${widget.price} DZ", style: const TextStyle(fontSize: 18, color: Colors.grey)),
-            Text("الكمية: ${widget.quantity}", style: const TextStyle(fontSize: 18, color: Colors.black)),
-            Text("الإجمالي: ${widget.price * widget.quantity} DZ", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.redAccent)),
-            const SizedBox(height: 20),
-            const Text("💳 اختر طريقة الدفع", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            RadioListTile(
-              title: const Text("الدفع عند الاستلام"),
-              value: "الدفع عند الاستلام",
-              groupValue: selectedPaymentMethod,
-              onChanged: (value) => setState(() => selectedPaymentMethod = value.toString()),
-            ),
-            RadioListTile(
-              title: const Text("الدفع الإلكتروني (فيزا / ماستر كارد)"),
-              value: "الدفع الإلكتروني",
-              groupValue: selectedPaymentMethod,
-              onChanged: (value) => setState(() => selectedPaymentMethod = value.toString()),
-            ),
-            RadioListTile(
-              title: const Text("باي بال"),
-              value: "باي بال",
-              groupValue: selectedPaymentMethod,
-              onChanged: (value) => setState(() => selectedPaymentMethod = value.toString()),
             ),
             const Spacer(),
             SizedBox(
@@ -99,13 +98,14 @@ class _OrderPageState extends State<OrderPage> {
               child: ElevatedButton(
                 onPressed: isLoading ? null : confirmOrder,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.pink,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  backgroundColor: Colors.pinkAccent,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 5,
                 ),
                 child: isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("تأكيد الطلب", style: TextStyle(fontSize: 18, color: Colors.white)),
+                    : const Text("تأكيد الطلب", style: TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ),
           ],

@@ -1,7 +1,8 @@
 import 'package:eapp/pages/signup.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:eapp/widget/widget_support.dart';
+
 class ForgotPassword extends StatefulWidget {
   const ForgotPassword({super.key});
 
@@ -10,123 +11,170 @@ class ForgotPassword extends StatefulWidget {
 }
 
 class _ForgotPasswordState extends State<ForgotPassword> {
-  TextEditingController mailcontroler= new TextEditingController();
-  String email="";
-  final _formkey=GlobalKey<FormState>();
-  restPassword()async{
-    try{
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+  final TextEditingController mailController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  Future<void> resetPassword() async {
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: mailController.text.trim());
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Password Reset Email has been sent",style: TextStyle(fontSize: 18.0),),
+        const SnackBar(
+          content: Text("تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني!", style: TextStyle(fontSize: 16.0)),
+          backgroundColor: Colors.green,
         ),
       );
-    }on FirebaseAuthException catch(e){
-      if(e.code=="user-not-found"){
-           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text( "No user found for email.",style: TextStyle(fontSize: 18.0),),));
+    } on FirebaseAuthException catch (e) {
+      if (e.code == "user-not-found") {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("لا يوجد مستخدم مرتبط بهذا البريد الإلكتروني.", style: TextStyle(fontSize: 16.0)),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
-
     }
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black87,
-      body: Container(child: Column(children: [
-        SizedBox(height: 70.0,),
-        Container(
-          alignment: Alignment.center,
-          child: Text("password Recovery",style: TextStyle(color: Colors.white,fontSize: 30.0,fontWeight: FontWeight.bold),),
-
-        ),
-        SizedBox(height: 10.0,),
-        Text("Enter your Email",style: TextStyle(
-          color: Colors.white,fontSize: 20.0,fontWeight: FontWeight.bold
-        ),),
-        Expanded(
-          child: Form(
-            key: _formkey,
-              child: Padding(padding: EdgeInsets.only(left: 10.0),
-        child: ListView(
-          children: [
-            Container(
-              padding: EdgeInsets.only(left: 10.0),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.white,width: 2.0),
-                borderRadius: BorderRadius.circular(30),
+      body: Stack(
+        children: [
+          // الخلفية العلوية بتدرج لوني جذاب
+          Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height / 2.5,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.pink.shade700, Colors.pink.shade300],
               ),
-              child: TextFormField(
-                controller: mailcontroler,
-                validator: (value){
-                  if(value==null||value.isEmpty) {
-                    return 'Please enter Eamil';
-                  }
-                  return null;
-                  },
-                style: TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: "Email",
-                  hintStyle:TextStyle(fontSize: 18.0,color: Colors.white),
-                  prefixIcon: Icon(Icons.person,color: Colors.white60,size: 30.0,
+            ),
+          ),
+          // الخلفية السفلية الشفافة
+          Container(
+            margin: EdgeInsets.only(top: MediaQuery.of(context).size.height / 3),
+            height: MediaQuery.of(context).size.height,
+            width: MediaQuery.of(context).size.width,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(40),
+                topRight: Radius.circular(40),
+              ),
+            ),
+          ),
+          // البطاقة الرئيسية
+          Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.0),
+              child: Material(
+                borderRadius: BorderRadius.circular(20),
+                elevation: 10.0,
+                shadowColor: Colors.black45,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 30.0),
+                  width: MediaQuery.of(context).size.width,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                    border: InputBorder.none),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text("استعادة كلمة المرور", style: AppWidget.semiBooldTexeFeildStyle()),
+                        SizedBox(height: 20.0),
 
-                  ),
-                ),
-               SizedBox(height: 40.0,),
-
-                  GestureDetector(
-                    onTap: (){
-                      if(_formkey.currentState!.validate()){
-                        setState(() {
-                          email=mailcontroler.text;
-                        });
-                        restPassword();
-                      }
-                    },
-                    child: Container(
-                      width: 140.0,
-                      padding: EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Center(
-                        child: Text("Send Email",style: TextStyle(color: Colors.black87,fontSize: 18.0,fontWeight: FontWeight.bold),
+                        Text(
+                          "أدخل بريدك الإلكتروني لإعادة تعيين كلمة المرور",
+                          style: TextStyle(fontSize: 16.0, color: Colors.black54),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
+                        SizedBox(height: 20.0),
+
+                        TextFormField(
+                          controller: mailController,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'يرجى إدخال البريد الإلكتروني';
+                            }
+                            return null;
+                          },
+                          decoration: InputDecoration(
+                            hintText: "البريد الإلكتروني",
+                            hintStyle: AppWidget.semiBooldTexeFeildStyle(),
+                            prefixIcon: Icon(Icons.email_outlined, color: Colors.pinkAccent),
+                          ),
+                        ),
+                        SizedBox(height: 20.0),
+
+                        GestureDetector(
+                          onTap: () {
+                            if (_formKey.currentState!.validate()) {
+                              resetPassword();
+                            }
+                          },
+                          child: Material(
+                            elevation: 6.0,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 15.0),
+                              width: MediaQuery.of(context).size.width / 2,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Colors.pink.shade600, Colors.pink.shade400],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  "إرسال البريد الإلكتروني",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18.0,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 20.0),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text("ليس لديك حساب؟", style: TextStyle(fontSize: 16.0)),
+                            SizedBox(width: 5),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => Signup()));
+                              },
+                              child: Text(
+                                "إنشاء حساب",
+                                style: TextStyle(
+                                  color: Colors.pinkAccent,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16.0,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-            SizedBox(height: 50.0,),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text("Don't have an ccount?",style: TextStyle(fontSize: 18.0,color: Colors.white),),
-                SizedBox(width: 20.0,),
-                GestureDetector(
-                  onTap: (){
-                    Navigator.push(context, MaterialPageRoute(builder: (context)=>Signup()));
-                  },
-
-               child:  Text("Create ",style: TextStyle(
-                  color: Color.fromARGB(255, 184,166 ,6 ),
-                  fontSize: 20.0,fontWeight: FontWeight.w500
-                ),),
                 ),
-
-              ],
-
-            )
-
-                ],
               ),
-            )
-
             ),
-        ),
+          ),
         ],
       ),
-      ),
-      );
-
+    );
   }
 }

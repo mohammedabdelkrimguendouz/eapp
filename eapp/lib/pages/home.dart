@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:eapp/admin/add_produit.dart';
 import 'package:eapp/pages/details.dart';
 import 'package:eapp/service/database.dart';
+import 'package:eapp/service/user_preferences.dart';
 import 'package:eapp/widget/widget_support.dart';
 import 'package:flutter/material.dart';
 
@@ -12,15 +14,25 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  bool hala = false, iksis = false, khyata = false, malabs = false;
+  bool hala = true, iksis = false, khyata = false, malabs = false;
   Stream<QuerySnapshot>? produititemStream;
   List<DocumentSnapshot> products = [];
+  bool isAdmin = false;
 
   @override
   void initState() {
     super.initState();
-    onTheLoad("حلويات"); // تحميل المنتجات الافتراضية عند بدء التطبيق
+    checkAdminStatus();
+    onTheLoad("حلويات");
   }
+  void checkAdminStatus() async {
+    Map<String, String?> userData = await UserPreferences.getUser();
+    String userId = userData['uid']??"";
+     String role = userData['role']??"Client";
+
+     isAdmin = (role.trim() == "Admin");
+  }
+
 
   void onTheLoad(String category) {
     setState(() {
@@ -57,18 +69,36 @@ class _HomeState extends State<Home> {
 
           return GestureDetector(
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => Details(
-                    name: ds["Name"],
-                    imageUrl: ds["Image"],
-                    detail: ds["Detail"],
-                    price: ds["Price"] is int ? ds["Price"] : int.tryParse(ds["Price"].toString()) ?? 0, // تحويل السعر إلى int
+              if (isAdmin) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddProduit(
+                      productId: ds.id.toString(),
+                      initialName: ds["Name"],
+                      initialImageUrl: ds["Image"],
+                      initialDetail: ds["Detail"],
+                      initialPrice: ds["Price"].toString(),
+                    initialCategory: ds["Category"],
+                    ),
                   ),
-                ),
-              );
+                );
+              } else {
+                // إذا لم يكن Admin، انتقل إلى شاشة التفاصيل
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Details(
+                      name: ds["Name"],
+                      imageUrl: ds["Image"],
+                      detail: ds["Detail"],
+                      price: ds["Price"] is int ? ds["Price"] : int.tryParse(ds["Price"].toString()) ?? 0,
+                    ),
+                  ),
+                );
+              }
             },
+
 
 
             child: Container(

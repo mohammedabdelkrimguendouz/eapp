@@ -19,8 +19,12 @@ class _ProfileState extends State<Profile> {
   String userEmail = "";
   String userImage = "https://via.placeholder.com/150";
   String userPhone = "";
+  String userAddress = "";
+
   TextEditingController nameController = TextEditingController();
   TextEditingController phoneController = TextEditingController();
+  TextEditingController addressController = TextEditingController();
+
   bool isLoading = false;
   bool isSaving = false;
   final DatabaseMethods _databaseMethods = DatabaseMethods();
@@ -40,8 +44,11 @@ class _ProfileState extends State<Profile> {
       userEmail = userData['email'] ?? "غير معروف";
       userImage = userData['imageURL'] ?? "https://via.placeholder.com/150";
       userPhone = userData['phone'] ?? "";
+      userAddress = userData['address'] ?? "";
+
       nameController.text = userName;
       phoneController.text = userPhone;
+      addressController.text = userAddress;
     });
     setState(() => isLoading = false);
   }
@@ -69,8 +76,17 @@ class _ProfileState extends State<Profile> {
         uid: userId,
         name: nameController.text,
         phone: phoneController.text,
-        imageURL: imageUrl ?? null,
+        address: addressController.text,
+        imageURL: imageUrl,
       );
+
+      // ✅ تحديث القيم في الواجهة بعد نجاح التحديث
+      setState(() {
+        userName = nameController.text;
+        userPhone = phoneController.text;
+        userAddress = addressController.text;
+        if (imageUrl != null) userImage = imageUrl;
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("✅ تم تحديث الملف الشخصي بنجاح!")),
@@ -127,21 +143,9 @@ class _ProfileState extends State<Profile> {
             const SizedBox(height: 15),
             Text(userEmail, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 15),
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: "👤 الاسم",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 15),
-            TextField(
-              controller: phoneController,
-              decoration: const InputDecoration(
-                labelText: "📱 الهاتف",
-                border: OutlineInputBorder(),
-              ),
-            ),
+            buildTextField(Icons.person, "👤 الاسم", nameController),
+            buildTextField(Icons.phone, "📱 الهاتف", phoneController),
+            buildTextField(Icons.location_on, "📍 العنوان", addressController),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: isSaving ? null : updateUserProfile,
@@ -159,7 +163,18 @@ class _ProfileState extends State<Profile> {
       ),
     );
   }
+
+  Widget buildTextField(IconData icon, String label, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: Colors.pinkAccent),
+          border: const OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
 }
-
-
-

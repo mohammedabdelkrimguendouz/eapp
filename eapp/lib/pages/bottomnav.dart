@@ -4,7 +4,8 @@ import 'package:eapp/pages/home.dart';
 import 'package:eapp/pages/order.dart';
 import 'package:eapp/pages/profile.dart';
 import 'package:eapp/pages/favorites.dart';
-import 'package:eapp/pages/cart.dart';
+import 'package:eapp/pages/my_orders.dart';
+import 'package:eapp/pages/seller_profile.dart';
 
 class Bottomnav extends StatefulWidget {
   const Bottomnav({super.key});
@@ -17,20 +18,18 @@ class _BottomnavState extends State<Bottomnav> {
   int currentTabIndex = 0;
   late List<Widget> pages;
   late Home homepages;
-  late OrderPage orderPage;
   late Profile profile;
-  late FavoritesPage favoritesPage;
-  late CartPage cartPage;
+  late MyOrdersPage myOrdersPage;
+  late SellerProfile sellerProfile;
 
   @override
   void initState() {
     homepages = Home();
-    orderPage = OrderPage(name: "", imageUrl: "", price: 0, quantity: 0);
     profile = Profile();
-    favoritesPage = const FavoritesPage();
-    cartPage = const CartPage();
+    sellerProfile = SellerProfile();
+    myOrdersPage = MyOrdersPage();
 
-    pages = [homepages, orderPage, cartPage, profile, favoritesPage];
+    pages = [homepages,myOrdersPage, profile, sellerProfile];
 
     super.initState();
   }
@@ -48,10 +47,9 @@ class _BottomnavState extends State<Bottomnav> {
         animationDuration: const Duration(milliseconds: 300),
         items: const [
           Icon(Icons.home, size: 30, color: Colors.pink),
-          Icon(Icons.shopping_cart, size: 30, color: Colors.pink),
           Icon(Icons.shopping_bag, size: 30, color: Colors.pink),
           Icon(Icons.person, size: 30, color: Colors.pink),
-          Icon(Icons.favorite, size: 30, color: Colors.pink),
+          Icon(Icons.store, size: 30, color: Colors.pink),
         ],
         onTap: (index) {
           setState(() {
@@ -62,3 +60,4 @@ class _BottomnavState extends State<Bottomnav> {
     );
   }
 }
+

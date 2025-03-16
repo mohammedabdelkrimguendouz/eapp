@@ -8,6 +8,7 @@ class UserPreferences {
     required String phone,
     required String? imageURL,
     required String role,
+    required String? address
   }) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('uid', uid);
@@ -16,6 +17,7 @@ class UserPreferences {
     await prefs.setString('phone', phone);
     await prefs.setString('imageURL', imageURL??"");
     await prefs.setString('role', role);
+    await prefs.setString('address', address??"");
   }
 
   static Future<Map<String, String?>> getUser() async {
@@ -27,6 +29,7 @@ class UserPreferences {
       'role': prefs.getString('role'),
       'phone': prefs.getString('phone'),
       'imageURL': prefs.getString('imageURL'),
+      'address': prefs.getString('address'),
     };
   }
 

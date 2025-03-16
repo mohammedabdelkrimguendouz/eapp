@@ -75,13 +75,6 @@ class _DetailsState extends State<Details> {
       appBar: AppBar(
         title: Text(widget.name),
         actions: [
-          IconButton(
-            icon: Icon(
-              isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: isFavorite ? Colors.red : Colors.grey,
-            ),
-            onPressed: toggleFavorite,
-          )
         ],
       ),
       body: SingleChildScrollView(
@@ -96,40 +89,63 @@ class _DetailsState extends State<Details> {
               ),
             ),
             const SizedBox(height: 20),
-            Text(widget.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Text(widget.detail, style: const TextStyle(fontSize: 16, color: Colors.grey)),
-            const SizedBox(height: 10),
-            Text("💰 السعر: ${widget.price} DZ", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.remove_circle_outline, size: 30, color: Colors.redAccent),
-                  onPressed: () {
-                    setState(() {
-                      if (quantity > 1) quantity--;
-                    });
-                  },
+
+            // معلومات المنتج داخل بطاقة
+            Card(
+              elevation: 5,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(widget.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 10),
+                    Text(widget.detail, style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                    const SizedBox(height: 10),
+                    Text("💰 السعر: ${widget.price} DZ", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
+                  ],
                 ),
-                Text('$quantity', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                IconButton(
-                  icon: const Icon(Icons.add_circle_outline, size: 30, color: Colors.green),
-                  onPressed: () {
-                    setState(() {
-                      quantity++;
-                    });
-                  },
-                ),
-              ],
+              ),
             ),
+
             const SizedBox(height: 20),
+
+            // التحكم في الكمية
+            Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.remove_circle_outline, size: 30, color: Colors.redAccent),
+                    onPressed: () {
+                      setState(() {
+                        if (quantity > 1) quantity--;
+                      });
+                    },
+                  ),
+                  Text('$quantity', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline, size: 30, color: Colors.green),
+                    onPressed: () {
+                      setState(() {
+                        quantity++;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // زر الطلب الآن
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.pink,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 onPressed: () {
@@ -148,51 +164,12 @@ class _DetailsState extends State<Details> {
                 child: const Text("🛒 الطلب الآن", style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
             ),
+
             const SizedBox(height: 20),
-            buildReviewSection(),
+
           ],
         ),
       ),
-    );
-  }
-
-  Widget buildReviewSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("التقييمات", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(5, (index) {
-            return IconButton(
-              icon: Icon(
-                index < rating ? Icons.star : Icons.star_border,
-                color: Colors.amber,
-              ),
-              onPressed: () {
-                setState(() {
-                  rating = index + 1.0;
-                });
-              },
-            );
-          }),
-        ),
-        TextField(
-          controller: reviewController,
-          decoration: InputDecoration(
-            hintText: "أضف تقييمك...",
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        ),
-        const SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("تم إرسال التقييم!")));
-          },
-          child: const Text("إرسال التقييم"),
-        ),
-      ],
     );
   }
 }

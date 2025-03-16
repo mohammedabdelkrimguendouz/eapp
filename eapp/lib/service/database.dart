@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:eapp/service/user_preferences.dart';
+import 'package:rxdart/rxdart.dart';
 
 class DatabaseMethods {
-
    final FirebaseAuth _auth = FirebaseAuth.instance;
    final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -13,19 +13,20 @@ class DatabaseMethods {
       required String email,
       required String phone,
       String role = "Client",
-      String? imageURL = null,
+      String? imageURL,
+      String? address,
    }) async {
       await _firestore.collection("users").doc(uid).set({
          "uid": uid,
          "name": name,
          "email": email,
-         "phone":phone,
+         "phone": phone,
          "role": role,
-         "imageURL":imageURL,
+         "imageURL": imageURL,
+         "address": address,
          "createdAt": FieldValue.serverTimestamp(),
       });
    }
-
 
    Future<String?> userLogin({
       required String email,
@@ -37,30 +38,52 @@ class DatabaseMethods {
             password: password.trim(),
          );
 
-         // جلب بيانات المستخدم من Firestore
-         DocumentSnapshot userDoc = await _firestore
-             .collection("users")
-             .doc(userCredential.user!.uid)
-             .get();
+         DocumentSnapshot userDoc =
+         await _firestore.collection("users").doc(userCredential.user!.uid).get();
 
          if (userDoc.exists) {
-            // حفظ بيانات المستخدم في الجهاز
             await UserPreferences.saveUser(
                uid: userCredential.user!.uid,
                name: userDoc["name"],
                email: userDoc["email"],
                role: userDoc["role"],
                imageURL: userDoc["imageURL"],
-                phone: userDoc["phone"]
+               phone: userDoc["phone"],
+               address: userDoc["address"],
             );
 
-            return userDoc["role"]; // إرجاع دور المستخدم
+            return userDoc["role"];
          } else {
-            return null; // المستخدم غير موجود
+            return null;
          }
-      } on FirebaseAuthException catch (e) {
+      } on FirebaseAuthException {
+         return null;
+      }
+   }
 
-         return null; // خطأ أثناء تسجيل الدخول
+   Future<Map<String, dynamic>?> getAdminInfo() async {
+      try {
+         QuerySnapshot adminQuery = await _firestore
+             .collection("users")
+             .where("role", isEqualTo: "Admin")
+             .limit(1)
+             .get();
+
+         if (adminQuery.docs.isNotEmpty) {
+            return adminQuery.docs.first.data() as Map<String, dynamic>;
+         }
+      } catch (e) {
+         print(e);
+      }
+      return null;
+   }
+
+   Future<Map<String, dynamic>?> getUserInfo(String userID) async {
+      try {
+         DocumentSnapshot userDoc = await _firestore.collection('users').doc(userID).get();
+         return userDoc.exists ? userDoc.data() as Map<String, dynamic>? : null;
+      } catch (e) {
+         return null;
       }
    }
 
@@ -69,17 +92,18 @@ class DatabaseMethods {
       String? name,
       String? phone,
       String? imageURL,
+      String? address,
    }) async {
       try {
          Map<String, dynamic> updatedData = {};
          if (name != null) updatedData["name"] = name;
          if (phone != null) updatedData["phone"] = phone;
          if (imageURL != null) updatedData["imageURL"] = imageURL;
+         if (address != null) updatedData["address"] = address;
 
          if (updatedData.isNotEmpty) {
             await _firestore.collection("users").doc(uid).update(updatedData);
 
-            // تحديث البيانات المخزنة في SharedPreferences
             Map<String, String?> userData = await UserPreferences.getUser();
             await UserPreferences.saveUser(
                uid: uid,
@@ -88,37 +112,129 @@ class DatabaseMethods {
                phone: phone ?? userData["phone"] ?? "",
                imageURL: imageURL ?? userData["imageURL"],
                role: userData["role"] ?? "Client",
+               address: address ?? userData["address"] ?? "",
             );
          }
       } catch (e) {
-         print("❌ فشل تحديث البيانات: $e");
+         print(e);
       }
    }
 
-   // إضافة منتج إلى Firestore
+   // إضافة منتج جديد
    Future<void> addProduct({
       required String name,
       required String detail,
       required String imageUrl,
-      required String price, // يتم استقباله كنص
+      required String price,
       required String category,
    }) async {
-      await FirebaseFirestore.instance.collection("products").add({
+      await _firestore.collection("products").add({
          "Name": name,
          "Detail": detail,
          "Image": imageUrl,
-         "Price": num.tryParse(price) ?? 0, // تحويل إلى رقم مع قيمة افتراضية 0
+         "Price": num.tryParse(price) ?? 0,
          "Category": category,
          "timestamp": FieldValue.serverTimestamp(),
       });
    }
 
+   // حذف منتج معين
+   Future<void> deleteProduct(String productId) async {
+      await _firestore.collection("products").doc(productId).delete();
+   }
+
+   // تحديث بيانات المنتج
+   Future<void> updateProduct({
+      required String productId,
+      String? name,
+      String? detail,
+      String? imageUrl,
+      String? price,
+      String? category,
+   }) async {
+      Map<String, dynamic> updatedData = {};
+      if (name != null) updatedData["Name"] = name;
+      if (detail != null) updatedData["Detail"] = detail;
+      if (imageUrl != null) updatedData["Image"] = imageUrl;
+      if (price != null) updatedData["Price"] = num.tryParse(price) ?? 0;
+      if (category != null) updatedData["Category"] = category;
+
+      if (updatedData.isNotEmpty) {
+         await _firestore.collection("products").doc(productId).update(updatedData);
+      }
+   }
+
    // جلب المنتجات حسب الفئة
    Stream<QuerySnapshot> getProductbyCategory(String category) {
-      return FirebaseFirestore.instance
+      return _firestore
           .collection("products")
           .where("Category", isEqualTo: category)
-          .orderBy("timestamp", descending: true)
           .snapshots();
+   }
+
+   // إضافة طلب جديد
+   Future<void> addOrder({
+      required String userId,
+      required String name,
+      required String imageUrl,
+      required int price,
+      required int quantity,
+   }) async {
+      try {
+         await _firestore.collection('orders').add({
+            'userId': userId,
+            'name': name,
+            'imageUrl': imageUrl,
+            'price': price,
+            'quantity': quantity,
+            'totalPrice': price * quantity,
+            'status': 'قيد المعالجة',
+            'timestamp': FieldValue.serverTimestamp(),
+         });
+      } catch (e) {
+         throw e;
+      }
+   }
+
+
+   Stream<List<QueryDocumentSnapshot>> getAllOrdersByTimeAndStatus() {
+      var pendingOrdersStream = _firestore
+          .collection("orders")
+          .where("status", isEqualTo: "قيد المعالجة")
+          .orderBy("timestamp", descending: true)
+          .snapshots()
+          .map((snapshot) => snapshot.docs);
+
+      var otherOrdersStream = _firestore
+          .collection("orders")
+          .orderBy("timestamp", descending: true)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.where((doc) => doc["status"] != "قيد المعالجة").toList());
+
+      return Rx.combineLatest2<List<QueryDocumentSnapshot>, List<QueryDocumentSnapshot>, List<QueryDocumentSnapshot>>(
+         pendingOrdersStream,
+         otherOrdersStream,
+             (pendingOrders, otherOrders) => [...pendingOrders, ...otherOrders],
+      );
+   }
+
+
+   Stream<List<QueryDocumentSnapshot>> getUserOrders(String userId) {
+      try {
+         return FirebaseFirestore.instance
+             .collection('orders')
+             .where('userId', isEqualTo: userId)
+             .orderBy('timestamp', descending: true)
+             .snapshots()
+             .map((snapshot) => snapshot.docs);
+      } catch (e) {
+         return const Stream.empty();
+      }
+   }
+
+
+   // تحديث حالة الطلب
+   Future<void> updateOrderStatus(String orderId, String newStatus) async {
+      await _firestore.collection("orders").doc(orderId).update({"status": newStatus});
    }
 }

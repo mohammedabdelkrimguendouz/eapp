@@ -1,3 +1,4 @@
+import 'package:eapp/admin/admin_orders_page.dart';
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:eapp/pages/home.dart';
@@ -6,6 +7,7 @@ import 'package:eapp/pages/profile.dart';
 import 'package:eapp/pages/favorites.dart';
 import 'package:eapp/pages/cart.dart';
 import 'package:eapp/admin/home_admin.dart';
+import 'package:eapp/admin/add_produit.dart';
 
 class BottomnavAdmin extends StatefulWidget {
   const BottomnavAdmin({super.key});
@@ -17,22 +19,18 @@ class BottomnavAdmin extends StatefulWidget {
 class _BottomnavAdminState extends State<BottomnavAdmin> {
   int currentTabIndex = 0;
   late List<Widget> pages;
-  late HomeAdmin homepages;
-  late OrderPage orderPage;
+  late Home homepages;
   late Profile profile;
-  late FavoritesPage favoritesPage;
-  late CartPage cartPage;
+  late AdminOrdersPage adminOrdersPage;
+  late AddProduit addProduit;
 
   @override
   void initState() {
-    homepages = HomeAdmin();
-    orderPage = OrderPage(name: "", imageUrl: "", price: 0, quantity: 0);
+    homepages =Home();
     profile = Profile();
-    favoritesPage = const FavoritesPage();
-    cartPage = const CartPage();
-
-    pages = [homepages, orderPage, cartPage, profile];
-
+    addProduit = AddProduit();
+    adminOrdersPage = AdminOrdersPage();
+    pages = [homepages,addProduit,adminOrdersPage, profile];
     super.initState();
   }
 
@@ -49,10 +47,9 @@ class _BottomnavAdminState extends State<BottomnavAdmin> {
         animationDuration: const Duration(milliseconds: 300),
         items: const [
           Icon(Icons.home, size: 30, color: Colors.pink),
-          Icon(Icons.shopping_cart, size: 30, color: Colors.pink),
-          Icon(Icons.shopping_bag, size: 30, color: Colors.pink),
+          Icon(Icons.add_box, size: 30, color: Colors.pink),
+          Icon(Icons.list_alt, size: 30, color: Colors.pink),
           Icon(Icons.person, size: 30, color: Colors.pink),
-          Icon(Icons.favorite, size: 30, color: Colors.pink),
         ],
         onTap: (index) {
           setState(() {
