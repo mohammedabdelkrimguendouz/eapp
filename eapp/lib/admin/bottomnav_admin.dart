@@ -1,12 +1,9 @@
 import 'package:eapp/admin/admin_orders_page.dart';
+import 'package:eapp/admin/admin_statistics_page.dart';
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:eapp/pages/home.dart';
-import 'package:eapp/pages/order.dart';
 import 'package:eapp/pages/profile.dart';
-import 'package:eapp/pages/favorites.dart';
-import 'package:eapp/pages/cart.dart';
-import 'package:eapp/admin/home_admin.dart';
 import 'package:eapp/admin/add_produit.dart';
 
 class BottomnavAdmin extends StatefulWidget {
@@ -23,14 +20,16 @@ class _BottomnavAdminState extends State<BottomnavAdmin> {
   late Profile profile;
   late AdminOrdersPage adminOrdersPage;
   late AddProduit addProduit;
+  late AdminStatisticsPage adminStatisticsPage; // ✅ صفحة الإحصائيات
 
   @override
   void initState() {
-    homepages =Home();
+    homepages = Home();
     profile = Profile();
     addProduit = AddProduit();
     adminOrdersPage = AdminOrdersPage();
-    pages = [homepages,addProduit,adminOrdersPage, profile];
+    adminStatisticsPage = AdminStatisticsPage(); // ✅
+    pages = [homepages, addProduit, adminOrdersPage, adminStatisticsPage, profile];
     super.initState();
   }
 
@@ -49,6 +48,7 @@ class _BottomnavAdminState extends State<BottomnavAdmin> {
           Icon(Icons.home, size: 30, color: Colors.pink),
           Icon(Icons.add_box, size: 30, color: Colors.pink),
           Icon(Icons.list_alt, size: 30, color: Colors.pink),
+          Icon(Icons.bar_chart, size: 30, color: Colors.pink),
           Icon(Icons.person, size: 30, color: Colors.pink),
         ],
         onTap: (index) {

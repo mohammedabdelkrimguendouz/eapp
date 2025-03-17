@@ -31,13 +31,15 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
   Color getStatusColor(String status) {
     switch (status) {
       case 'تم التسليم':
-        return Colors.green;
+        return Colors.green.shade700;
       case 'قيد المعالجة':
-        return Colors.red;
+        return Colors.amber.shade700;
       case 'جاهز للتسليم':
-        return Colors.orange;
+        return Colors.blue.shade600;
+      case 'تم الإلغاء':
+        return Colors.grey.shade600;
       default:
-        return Colors.blueGrey;
+        return Colors.blueGrey.shade500;
     }
   }
 

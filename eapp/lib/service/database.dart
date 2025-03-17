@@ -78,6 +78,16 @@ class DatabaseMethods {
       return null;
    }
 
+   Stream<List<QueryDocumentSnapshot>> getOrdersByStatus(String? status) {
+     Query query = _firestore.collection('orders').orderBy('timestamp', descending: true);
+
+     if (status != null && status != "الكل") {
+       query = query.where('status', isEqualTo: status);
+     }
+
+     return query.snapshots().map((snapshot) => snapshot.docs);
+   }
+
    Future<Map<String, dynamic>?> getUserInfo(String userID) async {
       try {
          DocumentSnapshot userDoc = await _firestore.collection('users').doc(userID).get();
