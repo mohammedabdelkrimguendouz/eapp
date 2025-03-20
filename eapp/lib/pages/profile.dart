@@ -1,11 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:animate_do/animate_do.dart';
 import 'package:eapp/service/user_preferences.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:io';
 import 'package:eapp/service/database.dart';
 import 'package:eapp/service/cloudinary_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:ui' as ui;
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -80,7 +82,6 @@ class _ProfileState extends State<Profile> {
         imageURL: imageUrl,
       );
 
-      // ✅ تحديث القيم في الواجهة بعد نجاح التحديث
       setState(() {
         userName = nameController.text;
         userPhone = phoneController.text;
@@ -107,72 +108,94 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("ملفي الشخصي"),
-        backgroundColor: Colors.pinkAccent,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: logout,
-          ),
-        ],
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Stack(
-              alignment: Alignment.bottomRight,
+    return Directionality(
+      textDirection: ui.TextDirection.rtl, // ✅ دعم اللغة العربية
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("ملفي الشخصي"),
+          backgroundColor: Colors.pinkAccent,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: logout,
+            ),
+          ],
+        ),
+        body: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : FadeIn(
+          duration: const Duration(milliseconds: 500),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                CircleAvatar(
-                  radius: 70,
-                  backgroundImage: userImage.isNotEmpty && File(userImage).existsSync()
-                      ? FileImage(File(userImage))
-                      : NetworkImage(userImage) as ImageProvider,
+                SlideInDown(
+                  duration: const Duration(milliseconds: 500),
+                  child: Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      CircleAvatar(
+                        radius: 70,
+                        backgroundImage: userImage.isNotEmpty && File(userImage).existsSync()
+                            ? FileImage(File(userImage))
+                            : NetworkImage(userImage) as ImageProvider,
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.camera_alt, color: Colors.pink, size: 30),
+                        onPressed: pickImage,
+                      ),
+                    ],
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.camera_alt, color: Colors.pink),
-                  onPressed: pickImage,
+                const SizedBox(height: 15),
+                FadeIn(
+                  child: Text(
+                    userEmail,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 15),
+                buildTextField(Icons.person, "👤 الاسم", nameController),
+                buildTextField(Icons.phone, "📱 الهاتف", phoneController),
+                buildTextField(Icons.location_on, "📍 العنوان", addressController),
+                const SizedBox(height: 20),
+                SlideInUp(
+                  duration: const Duration(milliseconds: 500),
+                  child: ElevatedButton(
+                    onPressed: isSaving ? null : updateUserProfile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.pinkAccent,
+                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: isSaving
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text("حفظ التعديلات", style: TextStyle(color: Colors.white, fontSize: 16)),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 15),
-            Text(userEmail, style: const TextStyle(fontSize: 16)),
-            const SizedBox(height: 15),
-            buildTextField(Icons.person, "👤 الاسم", nameController),
-            buildTextField(Icons.phone, "📱 الهاتف", phoneController),
-            buildTextField(Icons.location_on, "📍 العنوان", addressController),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: isSaving ? null : updateUserProfile,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.pinkAccent,
-                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: isSaving
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("حفظ التعديلات", style: TextStyle(color: Colors.white, fontSize: 16)),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget buildTextField(IconData icon, String label, TextEditingController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon, color: Colors.pinkAccent),
-          border: const OutlineInputBorder(),
+    return FadeIn(
+      duration: const Duration(milliseconds: 400),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: label,
+            prefixIcon: Icon(icon, color: Colors.pinkAccent),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            filled: true,
+            fillColor: Colors.grey[200],
+          ),
         ),
       ),
     );

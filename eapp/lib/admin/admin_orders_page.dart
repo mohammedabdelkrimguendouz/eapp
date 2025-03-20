@@ -16,7 +16,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
   final List<Map<String, dynamic>> orderStatuses = [
     {"status": "الكل", "icon": Icons.list, "color": Colors.blueGrey},
     {"status": "قيد المعالجة", "icon": Icons.timelapse, "color": Colors.orange},
-    {"status": "جاهز للتسليم", "icon": Icons.local_shipping, "color": Colors.blue},
+    {"status": "جاهز للاستلام", "icon": Icons.storefront, "color": Colors.blue},
     {"status": "تم التسليم", "icon": Icons.check_circle, "color": Colors.green},
     {"status": "تم الإلغاء", "icon": Icons.cancel, "color": Colors.red},
   ];
@@ -35,7 +35,7 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
         return Colors.green.shade700;
       case 'قيد المعالجة':
         return Colors.amber.shade700;
-      case 'جاهز للتسليم':
+      case 'جاهز للاستلام':
         return Colors.blue.shade600;
       case 'تم الإلغاء':
         return Colors.grey.shade600;
@@ -120,103 +120,157 @@ class _AdminOrdersPageState extends State<AdminOrdersPage> {
                     var order = orders[index];
                     var orderData = order.data() as Map<String, dynamic>;
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 6,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (orderData['imageUrl'] != null && orderData['imageUrl'].isNotEmpty)
-                              Center(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Image.network(
-                                    orderData['imageUrl'],
-                                    height: 150,
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
+                    return FutureBuilder<Map<String, dynamic>?>(
+                      future: DatabaseMethods().getUserInfo(orderData['userId']), // جلب معلومات المستخدم
+                      builder: (context, userSnapshot) {
+                        if (userSnapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+
+                        var userData = userSnapshot.data;
+                        if (userData == null) {
+                          return const Center(child: Text("تعذر تحميل بيانات المستخدم"));
+                        }
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 6,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (orderData['imageUrl'] != null && orderData['imageUrl'].isNotEmpty)
+                                  Center(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Image.network(
+                                        orderData['imageUrl'],
+                                        height: 150,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
                                   ),
+
+                                const SizedBox(height: 12),
+
+                                Row(
+                                  children: [
+                                    const Icon(Icons.shopping_bag, color: Colors.blue),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      orderData['name'] ?? "منتج غير معروف",
+                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
                                 ),
-                              ),
 
-                            const SizedBox(height: 12),
+                                const SizedBox(height: 8),
 
-                            Row(
-                              children: [
-                                const Icon(Icons.shopping_bag, color: Colors.blue),
-                                const SizedBox(width: 8),
-                                Text(
-                                  orderData['name'] ?? "منتج غير معروف",
-                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.attach_money, color: Colors.green),
+                                    const SizedBox(width: 8),
+                                    Text("${orderData['price']} DZ", style: const TextStyle(fontSize: 16)),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 8),
+
+                                Row(
+                                  children: [
+                                    const Icon(Icons.format_list_numbered, color: Colors.deepPurple),
+                                    const SizedBox(width: 8),
+                                    Text("الكمية: ${orderData['quantity'] ?? 0}", style: const TextStyle(fontSize: 16)),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 8),
+
+                                Row(
+                                  children: [
+                                    const Icon(Icons.info, color: Colors.orange),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      orderData['status'] ?? "غير محدد",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: getStatusColor(orderData['status']),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                // 🔹 **إضافة بيانات المستخدم**
+                                Divider(color: Colors.grey[400]),
+                                const SizedBox(height: 8),
+
+                                Row(
+                                  children: [
+                                    const Icon(Icons.person, color: Colors.black),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      "الزبون: ${userData['name'] ?? 'غير معروف'}",
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 8),
+
+                                Row(
+                                  children: [
+                                    const Icon(Icons.phone, color: Colors.teal),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      "الهاتف: ${userData['phone'] ?? 'غير متوفر'}",
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 8),
+
+                                Row(
+                                  children: [
+                                    const Icon(Icons.monetization_on, color: Colors.deepOrange),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      "السعر الإجمالي: ${orderData['totalPrice']} DZ",
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 12),
+
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text("تحديث الحالة:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                    DropdownButton<String>(
+                                      value: orderData['status'],
+                                      items: ["قيد المعالجة", "جاهز للاستلام", "تم التسليم", "تم الإلغاء"]
+                                          .map((status) => DropdownMenuItem(value: status, child: Text(status)))
+                                          .toList(),
+                                      onChanged: (newStatus) {
+                                        if (newStatus != null) {
+                                          updateOrderStatus(order.id, newStatus);
+                                        }
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-
-                            const SizedBox(height: 8),
-
-                            Row(
-                              children: [
-                                const Icon(Icons.attach_money, color: Colors.green),
-                                const SizedBox(width: 8),
-                                Text(
-                                  "${orderData['price']} DZ",
-                                  style: const TextStyle(fontSize: 16),
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 8),
-
-                            Row(
-                              children: [
-                                const Icon(Icons.format_list_numbered, color: Colors.deepPurple),
-                                const SizedBox(width: 8),
-                                Text("الكمية: ${orderData['quantity'] ?? 0}", style: const TextStyle(fontSize: 16)),
-                              ],
-                            ),
-
-                            const SizedBox(height: 8),
-
-                            Row(
-                              children: [
-                                const Icon(Icons.info, color: Colors.orange),
-                                const SizedBox(width: 8),
-                                Text(
-                                  orderData['status'] ?? "غير محدد",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: getStatusColor(orderData['status']),
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text("تحديث الحالة:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                DropdownButton<String>(
-                                  value: orderData['status'],
-                                  items: ["قيد المعالجة", "جاهز للتسليم", "تم التسليم", "تم الإلغاء"]
-                                      .map((status) => DropdownMenuItem(value: status, child: Text(status)))
-                                      .toList(),
-                                  onChanged: (newStatus) {
-                                    if (newStatus != null) {
-                                      updateOrderStatus(order.id, newStatus);
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     );
                   },
                 );

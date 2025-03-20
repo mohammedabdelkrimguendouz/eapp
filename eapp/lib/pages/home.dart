@@ -3,8 +3,8 @@ import 'package:eapp/admin/add_produit.dart';
 import 'package:eapp/pages/details.dart';
 import 'package:eapp/service/database.dart';
 import 'package:eapp/service/user_preferences.dart';
-import 'package:eapp/widget/widget_support.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -13,11 +13,12 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
-class _HomeState extends State<Home> {
+class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   bool hala = true, iksis = false, khyata = false, malabs = false;
   Stream<QuerySnapshot>? produititemStream;
   List<DocumentSnapshot> products = [];
   bool isAdmin = false;
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -25,37 +26,44 @@ class _HomeState extends State<Home> {
     checkAdminStatus();
     onTheLoad("حلويات");
   }
+
   void checkAdminStatus() async {
     Map<String, String?> userData = await UserPreferences.getUser();
-    String userId = userData['uid']??"";
-     String role = userData['role']??"Client";
-
-     isAdmin = (role.trim() == "Admin");
+    String role = userData['role'] ?? "Client";
+    setState(() {
+      isAdmin = (role.trim() == "Admin");
+    });
   }
-
 
   void onTheLoad(String category) {
     setState(() {
+      isLoading = true;
       produititemStream = DatabaseMethods().getProductbyCategory(category);
     });
 
     produititemStream!.listen((snapshot) {
       setState(() {
         products = snapshot.docs;
+        isLoading = false;
       });
-
-      if (snapshot.docs.isEmpty) {
-        print("⚠️ لا توجد منتجات متاحة لهذه الفئة: $category");
-      }
     });
   }
 
   Widget allItemsVertically() {
+    if (isLoading) {
+      return Expanded(
+        child: Center(
+          child: SpinKitFadingCircle(color: Colors.pink, size: 50),
+        ),
+      );
+    }
+
     if (products.isEmpty) {
       return Expanded(
         child: Center(
-            child: Text("⚠️ لا توجد منتجات متاحة",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+          child: Text("⚠️ لا توجد منتجات متاحة",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        ),
       );
     }
 
@@ -67,87 +75,92 @@ class _HomeState extends State<Home> {
         itemBuilder: (context, index) {
           DocumentSnapshot ds = products[index];
 
-          return GestureDetector(
-            onTap: () {
-              if (isAdmin) {
+          return AnimatedOpacity(
+            duration: Duration(milliseconds: 500),
+            opacity: 1.0,
+            child: GestureDetector(
+              onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => AddProduit(
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                    isAdmin
+                        ? AddProduit(
                       productId: ds.id.toString(),
                       initialName: ds["Name"],
                       initialImageUrl: ds["Image"],
                       initialDetail: ds["Detail"],
                       initialPrice: ds["Price"].toString(),
-                    initialCategory: ds["Category"],
-                    ),
-                  ),
-                );
-              } else {
-                // إذا لم يكن Admin، انتقل إلى شاشة التفاصيل
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => Details(
+                      initialCategory: ds["Category"],
+                    )
+                        : Details(
                       name: ds["Name"],
                       imageUrl: ds["Image"],
                       detail: ds["Detail"],
-                      price: ds["Price"] is int ? ds["Price"] : int.tryParse(ds["Price"].toString()) ?? 0,
+                      price: ds["Price"] is int
+                          ? ds["Price"]
+                          : int.tryParse(ds["Price"].toString()) ?? 0,
                     ),
+                    transitionsBuilder:
+                        (context, animation, secondaryAnimation, child) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: child,
+                      );
+                    },
                   ),
                 );
-              }
-            },
-
-
-
-            child: Container(
-              margin: EdgeInsets.only(bottom: 15),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(color: Colors.black12, blurRadius: 6, spreadRadius: 2)
-                ],
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
-                    child: Image.network(
-                      ds["Image"],
-                      height: 130,
-                      width: 130,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  SizedBox(width: 15),
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(ds["Name"],
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold)),
-                          SizedBox(height: 5),
-                          Text(ds["Detail"],
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 14, color: Colors.grey[700])),
-                          SizedBox(height: 10),
-                          Text("\dz${ds["Price"]}",
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.pink)),
-                        ],
+              },
+              child: Container(
+                margin: EdgeInsets.only(bottom: 15),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black12, blurRadius: 6, spreadRadius: 2)
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(15),
+                      child: Image.network(
+                        ds["Image"],
+                        height: 130,
+                        width: 130,
+                        fit: BoxFit.cover,
                       ),
                     ),
-                  ),
-                ],
+                    SizedBox(width: 15),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(ds["Name"],
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 5),
+                            Text(ds["Detail"],
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontSize: 14, color: Colors.grey[700])),
+                            SizedBox(height: 10),
+                            Text("\dz${ds["Price"]}",
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.pink)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -179,7 +192,8 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget categoryButton(String imagePath, String category, VoidCallback onTap, bool isSelected) {
+  Widget categoryButton(
+      String imagePath, String category, VoidCallback onTap, bool isSelected) {
     return GestureDetector(
       onTap: () {
         onTheLoad(category);
@@ -187,7 +201,8 @@ class _HomeState extends State<Home> {
       },
       child: Column(
         children: [
-          Container(
+          AnimatedContainer(
+            duration: Duration(milliseconds: 300),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
@@ -230,13 +245,16 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      body: Column(
-        children: [
-          showItem(),
-          allItemsVertically(),
-        ],
+    return Directionality(
+      textDirection: TextDirection.rtl, // دعم اليمين إلى اليسار
+      child: Scaffold(
+        backgroundColor: Colors.grey[100],
+        body: Column(
+          children: [
+            showItem(),
+            allItemsVertically(),
+          ],
+        ),
       ),
     );
   }
